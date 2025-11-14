@@ -1,0 +1,305 @@
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Random;
+import java.util.Scanner;
+
+public class AlegriaMarcoRodrigo_SistemasDePago {
+
+    static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        int opcion;
+        do {
+            opcion = mostrarMenu();
+            switch (opcion) {
+                case 1:
+                    pagoEfectivo();
+                    break;
+                case 2:
+                    pagoTarjeta();
+                    break;
+                case 3:
+                    pagoTransferencia();
+                    break;
+                case 4:
+                    System.out.println("Gracias por usar el sistema de pagos. ¡Hasta pronto!");
+                    break;
+                default:
+                    System.out.println("Opción no válida. Inténtelo de nuevo.");
+            }
+        } while (opcion != 4);
+    }
+
+    // --- MENÚ PRINCIPAL ---
+    public static int mostrarMenu() {
+        System.out.println("===============================");
+        System.out.println("   SISTEMA DE PAGO RESTAURANTE");
+        System.out.println("===============================");
+        System.out.println("1. Pago en efectivo");
+        System.out.println("2. Pago con tarjeta");
+        System.out.println("3. Pago por transferencia");
+        System.out.println("4. Salir");
+        System.out.print("Seleccione una opción: ");
+
+        String linea = sc.nextLine().trim();
+        try {
+            return Integer.parseInt(linea);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    // --- PAGO EN EFECTIVO ---
+    public static void pagoEfectivo() {
+        double importe = 0.0;
+        while (true) {
+            System.out.print("Importe a pagar: ");
+            String s = sc.nextLine().trim().replace(',', '.');
+            try {
+                importe = Double.parseDouble(s);
+                if (importe <= 0) {
+                    System.out.println("El importe debe ser mayor que 0.");
+                    continue;
+                }
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Importe no válido. Inténtelo de nuevo.");
+            }
+        }
+
+        double entregado = 0.0;
+        while (true) {
+            System.out.print("Cantidad entregada por el cliente: ");
+            String s = sc.nextLine().trim().replace(',', '.');
+            try {
+                entregado = Double.parseDouble(s);
+                if (entregado < importe) {
+                    System.out.println("Cantidad insuficiente. Introduzca una cantidad mayor o igual al importe.");
+                    continue;
+                }
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Cantidad no válida. Inténtelo de nuevo.");
+            }
+        }
+
+        double cambio = Math.round((entregado - importe) * 100.0) / 100.0; // redondeo a 2 decimales
+
+        if (cambio == 0.0) {
+            System.out.println("Pago exacto. No hay cambio.");
+        } else {
+            System.out.printf("Cambio a devolver: %.2f €\n", cambio);
+            calcularCambio(cambio);
+        }
+
+        registrarOperacion();
+    }
+
+    public static void calcularCambio(double cambio) {
+        // Trabajaremos en céntimos para evitar errores de coma flotante
+        int resto = (int) Math.round(cambio * 100);
+
+        System.out.println("Billetes:");
+
+        if (resto >= 10000) { // 100€ en céntimos
+            int n = resto / 10000;
+            System.out.println("  " + n + " de 100 €");
+            resto = resto - n * 10000;
+        }
+        if (resto >= 5000) {
+            int n = resto / 5000;
+            System.out.println("  " + n + " de 50 €");
+            resto = resto - n * 5000;
+        }
+        if (resto >= 2000) {
+            int n = resto / 2000;
+            System.out.println("  " + n + " de 20 €");
+            resto = resto - n * 2000;
+        }
+        if (resto >= 1000) {
+            int n = resto / 1000;
+            System.out.println("  " + n + " de 10 €");
+            resto = resto - n * 1000;
+        }
+        if (resto >= 500) {
+            int n = resto / 500;
+            System.out.println("  " + n + " de 5 €");
+            resto = resto - n * 500;
+        }
+
+        System.out.println("Monedas:");
+
+        if (resto >= 100) {
+            int n = resto / 100;
+            System.out.println("  " + n + " de 1 €");
+            resto = resto - n * 100;
+        }
+        if (resto >= 50) {
+            int n = resto / 50;
+            System.out.println("  " + n + " de 0.50 €");
+            resto = resto - n * 50;
+        }
+        if (resto >= 20) {
+            int n = resto / 20;
+            System.out.println("  " + n + " de 0.20 €");
+            resto = resto - n * 20;
+        }
+        if (resto >= 10) {
+            int n = resto / 10;
+            System.out.println("  " + n + " de 0.10 €");
+            resto = resto - n * 10;
+        }
+        if (resto >= 5) {
+            int n = resto / 5;
+            System.out.println("  " + n + " de 0.05 €");
+            resto = resto - n * 5;
+        }
+        if (resto >= 2) {
+            int n = resto / 2;
+            System.out.println("  " + n + " de 0.02 €");
+            resto = resto - n * 2;
+        }
+        if (resto >= 1) {
+            int n = resto / 1;
+            System.out.println("  " + n + " de 0.01 €");
+            resto = resto - n * 1;
+        }
+
+        // resto debe ser 0
+    }
+
+    // --- PAGO CON TARJETA ---
+    public static void pagoTarjeta() {
+        while (true) {
+            System.out.print("Introduzca número de tarjeta: ");
+            String entrada = sc.nextLine().trim();
+
+            if (!validarSoloNumerosYEspacios(entrada)) {
+                System.out.println("El número de tarjeta solo puede contener dígitos y espacios. Inténtelo de nuevo.");
+                continue;
+            }
+
+            String sinEspacios = entrada.replaceAll("\\s+", "");
+
+            if (sinEspacios.length() == 15 && sinEspacios.startsWith("3")) {
+                // Amex
+                System.out.println("Tipo de tarjeta: AMERICAN EXPRESS");
+                System.out.println("Tarjeta válida. Pago completado.");
+                registrarOperacion();
+                break;
+            } else if (sinEspacios.length() == 16 && sinEspacios.startsWith("4")) {
+                System.out.println("Tipo de tarjeta: VISA");
+                System.out.println("Tarjeta válida. Pago completado.");
+                registrarOperacion();
+                break;
+            } else if (sinEspacios.length() == 16 && sinEspacios.startsWith("5")) {
+                System.out.println("Tipo de tarjeta: MASTERCARD");
+                System.out.println("Tarjeta válida. Pago completado.");
+                registrarOperacion();
+                break;
+            } else {
+                System.out.println("Tarjeta no válida. Compruebe el número y la longitud según el tipo. Inténtelo de nuevo.");
+            }
+        }
+    }
+
+    public static boolean validarSoloNumerosYEspacios(String texto) {
+        if (texto == null || texto.isEmpty()) return false;
+        for (int i = 0; i < texto.length(); i++) {
+            char c = texto.charAt(i);
+            if (!(Character.isDigit(c) || Character.isSpaceChar(c))) return false;
+        }
+        return true;
+    }
+
+    public static boolean validarFormato16(String numero) {
+        String s = numero.replaceAll("\\s+", "");
+        return s.length() == 16 && s.matches("\\d{16}");
+    }
+
+    public static boolean validarFormatoAmex(String numero) {
+        String s = numero.replaceAll("\\s+", "");
+        return s.length() == 15 && s.matches("\\d{15}");
+    }
+
+    // --- PAGO POR TRANSFERENCIA ---
+    public static void pagoTransferencia() {
+        String titular;
+        while (true) {
+            System.out.print("Nombre completo del titular: ");
+            titular = sc.nextLine().trim();
+            if (titular.isEmpty()) {
+                System.out.println("El nombre no puede estar vacío.");
+                continue;
+            }
+            // Permitir letras y espacios y tildes/ñ
+            if (!titular.matches("[\\p{L} ]+")) {
+                System.out.println("El nombre solo puede contener letras y espacios. Inténtelo de nuevo.");
+                continue;
+            }
+            break;
+        }
+
+        String iban;
+        while (true) {
+            System.out.print("IBAN: ");
+            iban = sc.nextLine().trim().replaceAll("\\s+", "");
+            if (!validarIBAN(iban)) {
+                System.out.println("IBAN no válido. Debe tener 24 caracteres: 2 letras mayúsculas + 22 dígitos. Inténtelo de nuevo.");
+                continue;
+            }
+            break;
+        }
+
+        double importe = 0.0;
+        while (true) {
+            System.out.print("Importe a transferir: ");
+            String s = sc.nextLine().trim().replace(',', '.');
+            try {
+                importe = Double.parseDouble(s);
+                if (importe <= 0) {
+                    System.out.println("El importe debe ser mayor que 0.");
+                    continue;
+                }
+                break;
+            } catch (NumberFormatException e) {
+                System.out.println("Importe no válido. Inténtelo de nuevo.");
+            }
+        }
+
+        System.out.printf("Transferencia realizada correctamente.\nImporte: %.2f €\n", importe);
+        registrarOperacion();
+    }
+
+    public static boolean validarIBAN(String iban) {
+        if (iban == null) return false;
+        String s = iban.replaceAll("\\s+", "");
+        if (s.length() != 24) return false;
+        String primeras = s.substring(0, 2);
+        String resto = s.substring(2);
+        if (!primeras.matches("[A-Z]{2}")) return false;
+        if (!resto.matches("\\d{22}")) return false;
+        return true;
+    }
+
+    // --- REGISTRO DE LA OPERACIÓN ---
+    public static void registrarOperacion() {
+        String codigo = generarCodigoOperacion();
+        LocalDateTime ahora = LocalDateTime.now();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        System.out.println("Código de operación: " + codigo);
+        System.out.println("Fecha y hora: " + ahora.format(fmt));
+    }
+
+    public static String generarCodigoOperacion() {
+        Random r = new Random();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            char c = (char) ('A' + r.nextInt(26));
+            sb.append(c);
+        }
+        int num = r.nextInt(9000) + 1000; // 1000-9999
+        sb.append(num);
+        return sb.toString();
+    }
+}
